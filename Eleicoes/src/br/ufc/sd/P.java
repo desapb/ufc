@@ -5,26 +5,37 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Vector;
 
 public class P implements IP, Runnable{
 	
 	private static int PORTA = 1090;
+	private static String pid;
+	private static String lider;
+	
 
+	
 	protected P() throws RemoteException {
 		super();
+		String name = ManagementFactory.getRuntimeMXBean().getName();
+		pid = name.substring(0, name.indexOf('@'));
 	}
 
 	public static void main (String[] args) {
+		
 		System.out.println("--- CRIA PROCESSO ---");
+		
 		try {
 	    	P processo = new P();
 			IP stub = (IP) UnicastRemoteObject.exportObject(processo, getRandomPort());
-			getRegistry().rebind(ManagementFactory.getRuntimeMXBean().getName(),stub);
+			getRegistry().rebind(pid,stub);
+			
+			System.out.println("PID: " + pid);
+			
 			new Thread(processo).run();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+
 	}
 	
 	/**
@@ -68,17 +79,13 @@ public class P implements IP, Runnable{
 	public void run() {
 		while(true) {
 			try {
-				Thread.sleep(getRandomTime());
+				int randomTime = getRandomTime();
+				
+				System.out.println(+randomTime/1000 +" segundos para iniciar eleicao ----");
+				Thread.sleep(randomTime);
+				
 				this.startElection();
-		        
-				// Imprime processos registrados
-				//String[] boundNames = getRegistry().list();
-		        //for(int i = 0; i < boundNames.length; i++) {
-		        //	System.out.println("Clientes - " + i);
-		        //}
-		        
-		        // 
-		        
+		        		        
 			} catch (InterruptedException | RemoteException e) {
 				e.printStackTrace();
 			}
@@ -88,14 +95,27 @@ public class P implements IP, Runnable{
 
 	@Override
 	public void startElection() throws RemoteException {
-		System.out.println("inicia eleicao");
+		System.out.println(" - inicia eleicao - ");
+		
+		String[] boundNames = getRegistry().list();
+		
+		for (String p : boundNames)	{
+			
+			if(lider == null){
+				lider = pid;
+			}
+			
+			if (Integer.parseInt(p) > Integer.parseInt(lider)){
+            	lider = p;
+            }
+        }
+		
+		this.setLeader(lider);
 	}
 
-
 	@Override
-	public void setLeader() throws RemoteException {
-		System.out.println("seta lider");
-		
+	public void setLeader(String lider) throws RemoteException {
+		System.out.println("Lider: " + lider);
 	}
 	
 	
