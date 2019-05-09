@@ -7,5 +7,6 @@ public interface IP extends Remote {
 
 	public void startElection() throws RemoteException;
 	public void setLeader(String lider) throws RemoteException;
+	public String getPid() throws RemoteException;
 	
 }
